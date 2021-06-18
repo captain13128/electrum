@@ -973,6 +973,12 @@ class Interface(Logger):
             raise RequestCorrupted(f"server history has non-unique txids for sh={sh}")
         return res
 
+    async def send_batch_request(self, method, params: List[List[Any]], raise_errors: bool = False):
+        async with self.session.send_batch(raise_errors=raise_errors) as batch:
+            for param in params:
+                batch.add_request(method, param)
+        return batch.results
+
     async def listunspent_for_scripthash(self, sh: str) -> List[dict]:
         if not is_hash256_str(sh):
             raise Exception(f"{repr(sh)} is not a scripthash")
@@ -991,18 +997,25 @@ class Interface(Logger):
             assert_hash256_str(utxo_item['tx_hash'])
         return res
 
-    async def listunspents_for_scripthashes(self, shs: List[str]) -> Tuple[List[dict]]:
+    async def listunspents_for_scripthashes(self, shs: List[str], raise_errors: bool = False) -> Tuple[List[dict]]:
         # TODO Не знаю оставлять или нет
         for sh in shs:
             if not is_hash256_str(sh):
                 raise Exception(f"{repr(sh)} is not a scripthash")
         # do request
-        batch_req = self.session.send_batch()
+        method_name = 'blockchain.scripthash.listunspent'
+        res = await self.send_batch_request(
+            method=method_name,
+            params=list(map(lambda x: [x], shs)),
+            raise_errors=raise_errors
+        )
 
-        async with batch_req as req:
-            for sh in shs:
-                req.add_request('blockchain.scripthash.listunspent', args=[sh])
-        res = batch_req.results
+        # batch_req = self.session.send_batch()
+
+        # async with batch_req as req:
+        #     for sh in shs:
+        #         req.add_request(method_name, args=[sh])
+        # res = batch_req.results
 
         # check response
         # TODO Не знаю оставлять или нет
@@ -1022,18 +1035,24 @@ class Interface(Logger):
                     self.logger.error(f"check response {res} finished with error: {e} for item: {item}")
         return res
 
-    async def listmempools_for_scripthashes(self, shs: List[str]) -> Tuple[List[dict]]:
+    async def listmempools_for_scripthashes(self, shs: List[str], raise_errors: bool = False) -> Tuple[List[dict]]:
         # TODO Не знаю оставлять или нет
         for sh in shs:
             if not is_hash256_str(sh):
                 raise Exception(f"{repr(sh)} is not a scripthash")
         # do request
-        batch_req = self.session.send_batch()
-
-        async with batch_req as req:
-            for sh in shs:
-                req.add_request('blockchain.scripthash.get_mempool', args=[sh])
-        res = batch_req.results
+        method_name = 'blockchain.scripthash.get_mempool'
+        res = await self.send_batch_request(
+            method=method_name,
+            params=list(map(lambda x: [x], shs)),
+            raise_errors=raise_errors
+        )
+        # batch_req = self.session.send_batch()
+        #
+        # async with batch_req as req:
+        #     for sh in shs:
+        #         req.add_request('blockchain.scripthash.get_mempool', args=[sh])
+        # res = batch_req.results
 
         # check response
         # TODO Не знаю оставлять или нет
@@ -1045,7 +1064,7 @@ class Interface(Logger):
                     assert_dict_contains_field(utxo_item, field_name='tx_hash')
                     assert_dict_contains_field(utxo_item, field_name='height')
                     assert_non_negative_integer(utxo_item['fee'])
-                    assert_non_negative_integer(utxo_item['height'])
+                    assert_integer(utxo_item['height'])
                     assert_hash256_str(utxo_item['tx_hash'])
                 except Exception as e:
                     self.logger.error(f"check response {res} finished with error: {e} for item: {item}")
@@ -1063,19 +1082,24 @@ class Interface(Logger):
         assert_non_negative_integer(res['unconfirmed'])
         return res
 
-    async def get_balances_for_scripthashes(self, shs: List[str]) -> Tuple[dict]:
+    async def get_balances_for_scripthashes(self, shs: List[str], raise_errors: bool = False) -> Tuple[dict]:
         # TODO Не знаю оставлять или нет
         for sh in shs:
             if not is_hash256_str(sh):
                 raise Exception(f"{repr(sh)} is not a scripthash")
         # do request
-
-        batch_req = self.session.send_batch()
-
-        async with batch_req as req:
-            for sh in shs:
-                req.add_request('blockchain.scripthash.get_balance', args=[sh])
-        res = batch_req.results
+        method_name = 'blockchain.scripthash.get_balance'
+        res = await self.send_batch_request(
+            method=method_name,
+            params=list(map(lambda x: [x], shs)),
+            raise_errors=raise_errors
+        )
+        # batch_req = self.session.send_batch()
+        #
+        # async with batch_req as req:
+        #     for sh in shs:
+        #         req.add_request('blockchain.scripthash.get_balance', args=[sh])
+        # res = batch_req.results
 
         # TODO Не знаю оставлять или нет
         # # check response

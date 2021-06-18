@@ -1102,23 +1102,23 @@ class Network(Logger, NetworkRetryManager[ServerAddr]):
 
     @best_effort_reliable
     @catch_server_exceptions
-    async def listunspents_for_scripthashes(self, shs: List[str]) -> Tuple[List[dict]]:
-        return await self.interface.listunspents_for_scripthashes(shs)\
+    async def listunspents_for_scripthashes(self, shs: List[str], raise_errors: bool = False) -> Tuple[List[dict]]:
+        return await self.interface.listunspents_for_scripthashes(shs, raise_errors=raise_errors)
 
     @best_effort_reliable
     @catch_server_exceptions
-    async def listmempools_for_scripthashes(self, shs: List[str]) -> Tuple[List[dict]]:
-        return await self.interface.listmempools_for_scripthashes(shs)
+    async def listmempools_for_scripthashes(self, shs: List[str], raise_errors: bool = False) -> Tuple[List[dict]]:
+        return await self.interface.listmempools_for_scripthashes(shs, raise_errors=raise_errors)
+
+    @best_effort_reliable
+    @catch_server_exceptions
+    async def get_balances_for_scripthashes(self, shs: List[str], raise_errors: bool = False) -> Tuple[dict]:
+        return await self.interface.get_balances_for_scripthashes(shs, raise_errors=raise_errors)
 
     @best_effort_reliable
     @catch_server_exceptions
     async def get_balance_for_scripthash(self, sh: str) -> dict:
         return await self.interface.get_balance_for_scripthash(sh)
-
-    @best_effort_reliable
-    @catch_server_exceptions
-    async def get_balances_for_scripthashes(self, shs: List[str]) -> Tuple[dict]:
-        return await self.interface.get_balances_for_scripthashes(shs)
 
     @best_effort_reliable
     @catch_server_exceptions
