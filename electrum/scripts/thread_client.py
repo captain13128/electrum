@@ -18,18 +18,27 @@ class ElectrumClient:
         self.config = config
         self.loop, self.stopping_fut, self.loop_thread = loop, stopping_fut, loop_thread
         self.network = Network(config)
-        self.network.start()
         self.logger = logging.getLogger("ElectrumClient")
-
-        while not self.network.is_connected():
-            time.sleep(1)
-            print_msg("waiting for network to get connected...")
 
     def run(self, func: Callable, *args, **kwargs):
         a = asyncio.run_coroutine_threadsafe(func(*args, **kwargs), self.loop)
         while not a.done():
             time.sleep(1)
         return a.result()
+
+    def __enter__(self):
+        self.network.start()
+        while not self.network.is_connected():
+            time.sleep(1)
+            print_msg("waiting for network to get connected...")
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        a = asyncio.run_coroutine_threadsafe(self.network.stop(), self.loop)
+        while not a.done():
+            time.sleep(1)
+        return
 
 
 class ElectrumBatchClient(ElectrumClient):
@@ -139,11 +148,6 @@ class ElectrumThreadClient(ElectrumBatchClient):
         return self.result
 
     def __enter__(self):
+        super().__enter__()
         self.result = {}
         return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        a = asyncio.run_coroutine_threadsafe(self.network.stop(), self.loop)
-        while not a.done():
-            time.sleep(1)
-        return
